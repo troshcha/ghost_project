@@ -1,6 +1,16 @@
 venv/
+ENV/
+env/
+
 __pycache__/
+*.pyc
+*.pyo
+*.pyd
+
 *.log
+nohup.out
 state.json
-static/uploads/
 .env
+static/uploads/
+.vscode/
+
