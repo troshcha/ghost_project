@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <title>GHOST-CORE SPA</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body id="main-body" class="mode-one">
+<div class="mirror-wrapper">
+    <div id="container">
+        <div id="page-1" class="page">
+            <div class="glitch" id="p1-name">GHOST-CORE</div>
+            <div class="time" id="p1-time">00:00:00</div>
+            <div class="stats" id="p1-stats">CPU: 0% | RAM: 0%</div>
+        </div>
+
+        <div id="page-2" class="page">
+            <div class="time" id="p2-time">00:00:00</div>
+        </div>
+
+        <div id="page-3" class="page">
+            <div class="console-text">
+                > SYSTEM STATUS: ONLINE<br>
+                > HOST: <span id="p3-name">...</span><br>
+                > TIME: <span id="p3-time">...</span><br>
+                > <span id="p3-cpu">...</span><br>
+                > <span id="p3-ram">...</span>
+            </div>
+        </div>
+
+        <div id="page-4" class="page">
+            <div id="media-container">
+            </div>
+        </div>
+    </div>
+</div>
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>

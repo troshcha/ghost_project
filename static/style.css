@@ -1,0 +1,84 @@
+* { box-sizing: border-box; cursor: none !important; }
+html, body {
+    margin: 0; padding: 0;
+    width: 1024px; height: 600px;
+    background: black; overflow: hidden;
+    position: fixed; top: 0; left: 0;
+    font-family: 'Segoe UI', sans-serif;
+    transform: scaleX(-1);
+}
+
+html, body {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    background-color: black;
+    overflow: hidden;
+}
+
+/* Базовий стан: без трансформацій */
+.mirror-wrapper {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100vw;
+    height: 100vh;
+    transition: transform 0.3s ease; /* Додасть плавності при перемиканні */
+}
+
+/* Стан для голограми: розворот + дзеркало */
+.mirror-wrapper.active-mirror {
+    transform: rotate(180deg) scaleX(-1) !important;
+}
+
+#container { width: 100%; height: 100%; }
+.page { display: none; width: 100%; height: 100%; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
+
+/* Сторінка 1 */
+.mode-one #page-1 { display: flex; color: #00ffff; text-shadow: 0 0 20px #00ffff; }
+.mode-one #page-1 .time { font-size: 160px; font-weight: bold; }
+
+/* Сторінка 2 */
+.mode-two #page-2 { display: flex; color: #330000; }
+.mode-two #page-2 .time { font-size: 200px; text-shadow: 0 0 5px #220000; }
+
+/* Сторінка 3 */
+.mode-three #page-3 { 
+    display: flex; color: #00ff00; 
+    font-family: 'Courier New', monospace; 
+    text-shadow: 0 0 10px #00ff00; 
+    align-items: flex-start; padding-left: 50px; 
+}
+.mode-three #page-3 .console-text { font-size: 30px; text-align: left; }
+
+/* Сторінка 4 */
+#page-4 {
+    width: 100%;
+    height: 100%;
+    display: none; /* показується через .mode-four */
+    justify-content: center;
+    align-items: center;
+    background: black;
+}
+
+.mode-four #page-4 {
+    display: flex;
+}
+
+#media-container {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+#media-container img, 
+#media-container video {
+    max-width: 90vw;
+    max-height: 90vh;
+    object-fit: contain;
+    /* Додамо тінь, щоб перевірити, чи картинка взагалі є */
+    box-shadow: 0 0 20px rgba(0, 255, 255, 0.2); 
+}
