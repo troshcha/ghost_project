@@ -1,11 +1,22 @@
-* { box-sizing: border-box; cursor: none !important; }
-html, body {
-    margin: 0; padding: 0;
-    width: 1024px; height: 600px;
-    background: black; overflow: hidden;
-    position: fixed; top: 0; left: 0;
-    font-family: 'Segoe UI', sans-serif;
-    transform: scaleX(-1);
+/* FORCE PAGE VISIBILITY — FIX PRIORITY ISSUES */
+#page-1, #page-2, #page-3, #page-4 {
+    display: none !important;
+}
+
+body.mode-one  #page-1 { display: flex !important; }
+body.mode-two  #page-2 { display: flex !important; }
+body.mode-three #page-3 { display: flex !important; }
+body.mode-four #page-4 { display: flex !important; }
+
+
+/* --------------------------------------------------------
+   GLOBAL RESET
+--------------------------------------------------------- */
+
+* {
+    box-sizing: border-box;
+    user-select: none;
+    cursor: none !important;
 }
 
 html, body {
@@ -13,57 +24,118 @@ html, body {
     padding: 0;
     width: 100%;
     height: 100%;
-    background-color: black;
+    background: black;
     overflow: hidden;
+    font-family: "Segoe UI", sans-serif;
 }
 
-/* Базовий стан: без трансформацій */
+/* --------------------------------------------------------
+   MIRROR MODE WRAPPER
+--------------------------------------------------------- */
+
 .mirror-wrapper {
-    display: flex;
-    justify-content: center;
-    align-items: center;
     width: 100vw;
     height: 100vh;
-    transition: transform 0.3s ease; /* Додасть плавності при перемиканні */
-}
-
-/* Стан для голограми: розворот + дзеркало */
-.mirror-wrapper.active-mirror {
-    transform: rotate(180deg) scaleX(-1) !important;
-}
-
-#container { width: 100%; height: 100%; }
-.page { display: none; width: 100%; height: 100%; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
-
-/* Сторінка 1 */
-.mode-one #page-1 { display: flex; color: #00ffff; text-shadow: 0 0 20px #00ffff; }
-.mode-one #page-1 .time { font-size: 160px; font-weight: bold; }
-
-/* Сторінка 2 */
-.mode-two #page-2 { display: flex; color: #330000; }
-.mode-two #page-2 .time { font-size: 200px; text-shadow: 0 0 5px #220000; }
-
-/* Сторінка 3 */
-.mode-three #page-3 { 
-    display: flex; color: #00ff00; 
-    font-family: 'Courier New', monospace; 
-    text-shadow: 0 0 10px #00ff00; 
-    align-items: flex-start; padding-left: 50px; 
-}
-.mode-three #page-3 .console-text { font-size: 30px; text-align: left; }
-
-/* Сторінка 4 */
-#page-4 {
-    width: 100%;
-    height: 100%;
-    display: none; /* показується через .mode-four */
+    display: flex;
     justify-content: center;
     align-items: center;
-    background: black;
+    transition: transform 0.3s ease;
 }
 
-.mode-four #page-4 {
+.mirror-wrapper.active-mirror {
+    transform: rotate(180deg) scaleX(-1);
+}
+
+/* --------------------------------------------------------
+   PAGE SYSTEM
+--------------------------------------------------------- */
+
+#container {
+    width: 100%;
+    height: 100%;
+}
+
+.page {
+    display: none;
+    width: 100%;
+    height: 100%;
+    text-align: center;
+
     display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+}
+
+/* PAGE VISIBILITY CONTROL (set by JS via body.className) */
+.mode-one  #page-1 { display: flex; }
+.mode-two  #page-2 { display: flex; }
+.mode-three #page-3 { display: flex; }
+.mode-four #page-4 { display: flex; }
+
+/* --------------------------------------------------------
+   PAGE 1 — TITLE + CLOCK + STATS
+--------------------------------------------------------- */
+
+#page-1 {
+    color: #00ffff;
+    text-shadow: 0 0 20px #00ffff;
+}
+
+.p1-title {
+    font-size: 80px;
+    font-weight: bold;
+}
+
+.p1-time {
+    font-size: 160px;
+    font-weight: bold;
+}
+
+.p1-stats {
+    font-size: 32px;
+    margin-top: 20px;
+}
+
+/* --------------------------------------------------------
+   PAGE 2 — LARGE CLOCK
+--------------------------------------------------------- */
+
+#page-2 {
+    color: #330000;
+    text-shadow: 0 0 10px #440000;
+}
+
+.p2-time {
+    font-size: 200px;
+    font-weight: bold;
+}
+
+/* --------------------------------------------------------
+   PAGE 3 — TERMINAL VIEW
+--------------------------------------------------------- */
+
+#page-3 {
+    color: #00ff00;
+    font-family: "Courier New", monospace;
+    text-shadow: 0 0 10px #00ff00;
+    justify-content: flex-start;
+    align-items: flex-start;
+    padding-left: 40px;
+}
+
+.console-text {
+    font-size: 32px;
+    line-height: 1.4;
+    text-align: left;
+}
+
+/* --------------------------------------------------------
+   PAGE 4 — MEDIA (IMAGE/VIDEO/YOUTUBE)
+--------------------------------------------------------- */
+
+#page-4 {
+    background: black;
 }
 
 #media-container {
@@ -74,11 +146,12 @@ html, body {
     align-items: center;
 }
 
-#media-container img, 
-#media-container video {
-    max-width: 90vw;
-    max-height: 90vh;
+#media-container img,
+#media-container video,
+#media-container iframe {
+    max-width: 95vw;
+    max-height: 95vh;
     object-fit: contain;
-    /* Додамо тінь, щоб перевірити, чи картинка взагалі є */
-    box-shadow: 0 0 20px rgba(0, 255, 255, 0.2); 
+    box-shadow: 0 0 20px rgba(0,255,255,0.4);
+    border: none;
 }

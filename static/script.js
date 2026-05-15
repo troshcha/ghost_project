@@ -1,98 +1,150 @@
-async function updateData() {
-    try {
-        const response = await fetch('/api/status');
-        if (!response.ok) throw new Error('Network response was not ok');
-        
-        const data = await response.json();
-        
-        // 1. КЕРУВАННЯ СТОРІНКАМИ (МОДАМИ)
-        const body = document.getElementById('main-body');
-        if (body) {
-            const pageMap = { 
-                "1": "mode-one", 
-                "2": "mode-two", 
-                "3": "mode-three", 
-                "4": "mode-four" 
-            };
-            // Встановлюємо клас залежно від значення data.page (дефолт - mode-one)
-            body.className = pageMap[data.page] || "mode-one";
-        }
+/* --------------------------------------------------------
+   GLOBAL STATE TRACKED IN JS
+   (prevents unnecessary DOM rewrites and memory leaks)
+--------------------------------------------------------- */
 
-        // 2. КЕРУВАННЯ ДЗЕРКАЛОМ (MIRROR)
-        const wrapper = document.querySelector('.mirror-wrapper');
-        if (wrapper) {
-            // Перевіряємо і булеве значення, і рядок (на випадок помилок у JSON)
-            if (data.mirror === true || data.mirror === "true") {
-                wrapper.classList.add('active-mirror');
-            } else {
-                wrapper.classList.remove('active-mirror');
-            }
-        }
+let lastPage = null;
+let lastMediaUrl = null;
+let lastMirror = null;
 
-        // 3. ДОПОМІЖНА ФУНКЦІЯ ДЛЯ ОНОВЛЕННЯ ТЕКСТУ
-        const updateEl = (id, val) => {
-            const el = document.getElementById(id);
-            if (el) el.innerText = val;
-        };
+/* --------------------------------------------------------
+   UPDATE LOOP
+--------------------------------------------------------- */
 
-        // 4. ОНОВЛЕННЯ ДАНИХ ДЛЯ ВСІХ СТОРІНОК
-        // Сторінка 1
-        updateEl('p1-name', data.name);
-        updateEl('p1-time', data.time);
-        updateEl('p1-stats', `${data.cpu} | ${data.ram}`);
+async function fetchStatus() {
+    const res = await fetch("/api/status");
+    if (!res.ok) throw new Error("Network error");
+    return await res.json();
+}
 
-        // Сторінка 2
-        updateEl('p2-time', data.time);
+/* --------------------------------------------------------
+   DOM HELPERS
+--------------------------------------------------------- */
 
-        // Сторінка 3 (Консоль)
-        updateEl('p3-name', data.name);
-        updateEl('p3-time', data.time);
-        updateEl('p3-cpu', data.cpu);
-        updateEl('p3-ram', data.ram);
-
-       // 5. ЛОГІКА ДЛЯ PAGE 4 (МЕДІА: ФОТО/ВІДЕО/YOUTUBE)
-            if (data.page === "4") {
-                const mediaContainer = document.getElementById('media-container');
-                if (mediaContainer) {
-                    const currentUrl = mediaContainer.getAttribute('data-current-url');
-
-                    if (currentUrl !== data.content_url) {
-                        mediaContainer.innerHTML = ''; 
-                        mediaContainer.setAttribute('data-current-url', data.content_url);
-
-                        if (data.content_type === "image") {
-                            mediaContainer.innerHTML = `<img src="${data.content_url}" style="max-width:100%; max-height:100%;">`;
-                        } 
-                        else if (data.content_type === "video") {
-                            // muted: true — гарантує автозапуск без помилок
-                            const video = document.createElement('video');
-                            video.src = data.content_url;
-                            video.autoplay = true;
-                            video.loop = true;
-                            video.muted = true; 
-                            video.style.maxWidth = "100%";
-                            mediaContainer.appendChild(video);
-                        }
-                        else if (data.content_type === "youtube") {
-                            const iframe = document.createElement('iframe');
-                            // Додаємо playlist=${data.content_url}, щоб loop=1 реально працював
-                            iframe.src = `https://www.youtube.com/embed/${data.content_url}?autoplay=1&mute=1&controls=0&loop=1&playlist=${data.content_url}&modestbranding=1&iv_load_policy=3`;
-                            iframe.style.width = "100vw";
-                            iframe.style.height = "100vh";
-                            iframe.style.border = "none";
-                            mediaContainer.appendChild(iframe);
-                        }
-                    }
-                }
-            }
-
-    } catch (e) {
-        console.error("Помилка оновлення даних:", e);
+function setText(id, text) {
+    const el = document.getElementById(id);
+    if (el && el.innerText !== text) {
+        el.innerText = text;
     }
 }
 
-// Запуск циклу: кожну секунду (1000 мс)
-setInterval(updateData, 1000);
+function clearNode(el) {
+    while (el.firstChild) el.removeChild(el.firstChild);
+}
 
-// Перший запуск одразу при завантаженні сторінки
-updateData();
+/* --------------------------------------------------------
+   PAGE + MIRROR LOGIC
+--------------------------------------------------------- */
+
+function applyPage(page) {
+    if (page === lastPage) return;
+
+    const map = {
+        "1": "mode-one",
+        "2": "mode-two",
+        "3": "mode-three",
+        "4": "mode-four"
+    };
+
+    const mode = map[page] || "mode-one";
+    document.getElementById("main-body").className = mode;
+    lastPage = page;
+}
+
+function applyMirror(mirror) {
+    if (mirror === lastMirror) return;
+
+    const wrapper = document.querySelector(".mirror-wrapper");
+    if (!wrapper) return;
+
+    if (mirror === true || mirror === "true") {
+        wrapper.classList.add("active-mirror");
+    } else {
+        wrapper.classList.remove("active-mirror");
+    }
+
+    lastMirror = mirror;
+}
+
+/* --------------------------------------------------------
+   MEDIA HANDLING (PAGE 4)
+--------------------------------------------------------- */
+
+function updateMedia(type, url) {
+    if (lastMediaUrl === url) return;
+
+    const container = document.getElementById("media-container");
+    if (!container) return;
+
+    lastMediaUrl = url;
+
+    clearNode(container);
+
+    if (!url) return;
+
+    if (type === "image") {
+        const img = document.createElement("img");
+        img.src = url;
+        container.appendChild(img);
+    }
+
+    else if (type === "video") {
+        const video = document.createElement("video");
+        video.src = url;
+        video.autoplay = true;
+        video.loop = true;
+        video.muted = true;
+        container.appendChild(video);
+    }
+
+    else if (type === "youtube") {
+        const iframe = document.createElement("iframe");
+        iframe.src = `[youtube.com](https://www.youtube.com/embed/${url}?autoplay=1&mute=1&controls=0&loop=1&playlist=${url}&modestbranding=1)`;
+        iframe.allow = "autoplay";
+        container.appendChild(iframe);
+    }
+}
+
+/* --------------------------------------------------------
+   MAIN UI UPDATE
+--------------------------------------------------------- */
+
+function updateUI(data) {
+    applyPage(data.page);
+    applyMirror(data.mirror);
+
+    /* PAGE 1 */
+    setText("p1-name", data.name);
+    setText("p1-time", data.time);
+    setText("p1-stats", `${data.cpu} | ${data.ram}`);
+
+    /* PAGE 2 */
+    setText("p2-time", data.time);
+
+    /* PAGE 3 */
+    setText("p3-name", data.name);
+    setText("p3-time", data.time);
+    setText("p3-cpu", data.cpu);
+    setText("p3-ram", data.ram);
+
+    /* PAGE 4 */
+    if (data.page === "4") {
+        updateMedia(data.content_type, data.content_url);
+    }
+}
+
+/* --------------------------------------------------------
+   SAFE UPDATE LOOP
+--------------------------------------------------------- */
+
+async function updateLoop() {
+    try {
+        const data = await fetchStatus();
+        updateUI(data);
+    } catch (err) {
+        console.error("Update error:", err);
+    }
+}
+
+setInterval(updateLoop, 1000);
+updateLoop();

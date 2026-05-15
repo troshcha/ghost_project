@@ -4,204 +4,240 @@ import json
 import psutil
 import datetime
 import telebot
-from flask import Flask, render_template, jsonify
-from threading import Thread
-from dotenv import load_dotenv
+import threading
 import re
+
+from flask import Flask, render_template, jsonify
+from dotenv import load_dotenv
+
+# ---------------------------------------------------------
+# INIT
+# ---------------------------------------------------------
 
 load_dotenv()
 
 app = Flask(__name__)
-bot = telebot.TeleBot(os.getenv('BOT_TOKEN'))
+bot = telebot.TeleBot(os.getenv("BOT_TOKEN"), parse_mode="HTML")
 
-DATA_FILE = "state.json"
+STATE_FILE = "state.json"
+
 DEFAULT_STATE = {
     "name": "GHOST-CORE",
     "page": "1",
     "mirror": False,
     "content_type": "image",
     "content_url": "",
-    "cpu": "0%",
-    "ram": "0%",
+    "cpu": "CPU: 0%",
+    "ram": "RAM: 0%",
     "time": "00:00:00",
-    "yt_id": "", 
-    "sound_url": ""
 }
 
-# --- Save/Load State ---
+state_lock = threading.Lock()
+state = {}
+
+# ---------------------------------------------------------
+# STATE HANDLING (THREAD‑SAFE)
+# ---------------------------------------------------------
+
 def load_state():
-    if os.path.exists(DATA_FILE):
-        try:
-            with open(DATA_FILE, 'r', encoding='utf-8') as f:
-                saved = json.load(f)
-                base = DEFAULT_STATE.copy()
-                base.update(saved)
-                return base
-        except Exception as e:
-            print(f"Помилка завантаження: {e}")
-    return DEFAULT_STATE.copy()
+    if not os.path.exists(STATE_FILE):
+        return DEFAULT_STATE.copy()
+
+    try:
+        with open(STATE_FILE, "r", encoding="utf-8") as f:
+            data = json.load(f)
+            base = DEFAULT_STATE.copy()
+            base.update(data)
+            return base
+    except Exception:
+        return DEFAULT_STATE.copy()
+
 
 def save_state():
+    """Save state without volatile stats (cpu/ram/time)."""
     try:
-        to_save = {k: v for k, v in state.items() if k not in ['cpu', 'ram', 'time']}
-        with open(DATA_FILE, 'w', encoding='utf-8') as f:
-            json.dump(to_save, f, ensure_ascii=False, indent=4)
+        with state_lock:
+            persistent = {k: v for k, v in state.items()
+                          if k not in ("cpu", "ram", "time")}
+
+        with open(STATE_FILE, "w", encoding="utf-8") as f:
+            json.dump(persistent, f, ensure_ascii=False, indent=4)
+
     except Exception as e:
-        print(f"Помилка збереження: {e}")
+        print("State save error:", e)
 
-state = load_state()
-state.update({"cpu": "0%", "ram": "0%", "time": "00:00:00"})
 
-# --- States update loop ---
-def update_stats_loop():
-    psutil.cpu_percent(interval=None)
+# ---------------------------------------------------------
+# BACKGROUND SYSTEM METRICS
+# ---------------------------------------------------------
+
+def stats_loop():
+    psutil.cpu_percent(None)
+
     while True:
-        cpu_usage = psutil.cpu_percent(interval=1)
-        state['cpu'] = f"CPU: {cpu_usage}%"
-        state['ram'] = f"RAM: {psutil.virtual_memory().percent}%"
-        state['time'] = datetime.datetime.now().strftime("%H:%M:%S")
+        cpu = psutil.cpu_percent(interval=1)
+        ram = psutil.virtual_memory().percent
 
-# --- ЛОГІКА FLASK ---
-@app.route('/')
+        with state_lock:
+            state["cpu"] = f"CPU: {cpu}%"
+            state["ram"] = f"RAM: {ram}%"
+            state["time"] = datetime.datetime.now().strftime("%H:%M:%S")
+
+
+# ---------------------------------------------------------
+# FLASK ENDPOINTS
+# ---------------------------------------------------------
+
+@app.route("/")
 def index():
-    return render_template('index.html')
+    return render_template("index.html")
 
-@app.route('/api/status')
-def get_status():
-    return jsonify(state)
+@app.route("/api/status")
+def api_status():
+    with state_lock:
+        return jsonify(state.copy())
 
-# --- ЛОГІКА TELEGRAM ---
-# Команда для вибору сторінки
-@bot.message_handler(commands=['page'])
-def page_menu(message):
-    markup = telebot.types.ReplyKeyboardMarkup(resize_keyboard=True)
-    markup.add("1", "2", "3", "4")
-    bot.send_message(message.chat.id, "Оберіть сторінку:", reply_markup=markup)
 
-@bot.message_handler(func=lambda message: message.text in ["1", "2", "3", "4"])
-def bot_page_buttons(message):
-    state["page"] = message.text
-    save_state()       
-    bot.reply_to(message, f".mode-{get_word(message.text)}")
+# ---------------------------------------------------------
+# TELEGRAM HANDLERS
+# ---------------------------------------------------------
 
-# Turn off the Raspberry Pi
-@bot.message_handler(commands=['off'])
-def shutdown_pi(message):
-    bot.reply_to(message, "GHOST-CORE завершує роботу")
+def safe_set(key, value):
+    with state_lock:
+        state[key] = value
+    save_state()
+
+def safe_multi(**kwargs):
+    with state_lock:
+        for k, v in kwargs.items():
+            state[k] = v
+    save_state()
+
+
+@bot.message_handler(commands=["page"])
+def choose_page(msg):
+    kb = telebot.types.ReplyKeyboardMarkup(resize_keyboard=True)
+    kb.add("1", "2", "3", "4")
+    bot.send_message(msg.chat.id, "Select page:", reply_markup=kb)
+
+
+@bot.message_handler(func=lambda m: m.text in ["1", "2", "3", "4"])
+def set_page(msg):
+    page = msg.text
+    safe_set("page", page)
+    bot.reply_to(msg, f".mode-{page}")
+
+
+@bot.message_handler(commands=["mirror"])
+def toggle_mirror(msg):
+    with state_lock:
+        current = state.get("mirror", False)
+        new_val = not bool(current)
+
+    safe_set("mirror", new_val)
+    bot.reply_to(msg, f"Mirror: {'ON' if new_val else 'OFF'}")
+
+
+@bot.message_handler(commands=["off"])
+def shutdown(msg):
+    bot.reply_to(msg, "Shutting down...")
     os.system("sudo shutdown -h now")
 
-# Mirror mode toggle
-@bot.message_handler(commands=['mirror'])
-def toggle_mirror(message):
-    current_val = state.get("mirror", False)
-    if isinstance(current_val, str):
-        current_val = current_val.lower() == 'true'
-    
-    state["mirror"] = not current_val
-    save_state()
-    status = "ON" if state["mirror"] else "OFF"
-    bot.reply_to(message, f"Mirror mode: {status}")
 
-# GIF as file upload
-@bot.message_handler(content_types=['animation', 'document', 'video'])
-def handle_files(message):
+@bot.message_handler(commands=["rename", "setname"])
+def rename(msg):
     try:
-        file_info = None
-        if message.animation:
-            file_info = bot.get_file(message.animation.file_id)
-        elif message.video:
-            file_info = bot.get_file(message.video.file_id)
-        elif message.document and message.document.mime_type.startswith('image/gif'):
-            file_info = bot.get_file(message.document.file_id)
+        new = msg.text.split(maxsplit=1)[1].strip().upper()
+        safe_set("name", new)
+        bot.reply_to(msg, f"Name set: {new}")
+    except Exception:
+        bot.reply_to(msg, "Usage: /rename NAME")
 
-        if file_info:
-            # Отримуємо розширення файлу
-            ext = file_info.file_path.split('.')[-1]
-            filename = f"content.{ext}"
-            filepath = os.path.join("static/uploads", filename)
-            
-            # Скачуємо файл на малинку
-            downloaded_file = bot.download_file(file_info.file_path)
-            with open(filepath, 'wb') as new_file:
-                new_file.write(downloaded_file)
-            
-            # Даємо фронтенду ЛОКАЛЬНЕ посилання
-            # Додаємо таймстамп ?t=..., щоб браузер не брав стару гіфку з кешу
-            state["content_type"] = "video" if ext in ['mp4', 'webm'] else "image"
-            state["content_url"] = f"/static/uploads/{filename}?t={int(time.time())}"
-            save_state()
-            
-            bot.reply_to(message, "🔥 Гіфку збережено локально! Перевіряй на 4 сторінці.")
-        else:
-            bot.reply_to(message, "❌ Не вдалося розпізнати файл.")
-            
+
+# ----------------------- MEDIA HANDLERS -----------------------
+
+@bot.message_handler(commands=["gif"])
+def gif_url(msg):
+    try:
+        url = msg.text.split(maxsplit=1)[1].strip()
+        safe_multi(content_type="image", content_url=url)
+        bot.reply_to(msg, "GIF added.")
+    except Exception:
+        bot.reply_to(msg, "Usage: /gif URL")
+
+
+@bot.message_handler(commands=["show"])
+def show_from_url(msg):
+    try:
+        url = msg.text.split(maxsplit=1)[1].strip()
+        ext = url.lower().split(".")[-1]
+
+        safe_multi(
+            content_type="image" if ext in ("jpg", "jpeg", "png", "gif") else "video",
+            content_url=url
+        )
+        bot.reply_to(msg, "Content loaded.")
+    except Exception:
+        bot.reply_to(msg, "Usage: /show URL")
+
+
+@bot.message_handler(commands=["yt"])
+def youtube(msg):
+    try:
+        url = msg.text.split(maxsplit=1)[1].strip()
+        match = re.search(r"(?:v=|/)([0-9A-Za-z_-]{11})", url)
+
+        if not match:
+            bot.reply_to(msg, "Bad link.")
+            return
+
+        video_id = match.group(1)
+        safe_multi(content_type="youtube", content_url=video_id)
+        bot.reply_to(msg, "YouTube loaded. Switch to page 4.")
+    except Exception:
+        bot.reply_to(msg, "Usage: /yt URL")
+
+
+@bot.message_handler(content_types=["animation", "document", "video"])
+def upload_media(msg):
+    try:
+        file_info = (
+            bot.get_file(msg.animation.file_id) if msg.animation else
+            bot.get_file(msg.video.file_id) if msg.video else
+            bot.get_file(msg.document.file_id) if msg.document and msg.document.mime_type == "image/gif"
+            else None
+        )
+
+        if not file_info:
+            bot.reply_to(msg, "Can't read the file.")
+            return
+
+        ext = file_info.file_path.split(".")[-1]
+        fname = f"content.{ext}"
+        path = os.path.join("static/uploads", fname)
+
+        data = bot.download_file(file_info.file_path)
+        with open(path, "wb") as f:
+            f.write(data)
+
+        safe_multi(
+            content_type="video" if ext in ("mp4", "webm") else "image",
+            content_url=f"/static/uploads/{fname}?t={int(time.time())}"
+        )
+
+        bot.reply_to(msg, "Media saved locally.")
     except Exception as e:
-        bot.reply_to(message, f"⚠️ Помилка: {e}")
+        bot.reply_to(msg, f"Error: {e}")
 
-# GIF by URL
-@bot.message_handler(commands=['gif'])
-def gif_link(message):
-    try:
-        url = message.text.split(maxsplit=1)[1].strip()
-        state["content_type"] = "image"
-        state["content_url"] = url
-        save_state()
-        bot.reply_to(message, "🖼 Гіфку за посиланням додано!")
-    except:
-        bot.reply_to(message, "❌ Використання: /gif [посилання]")
 
-# Load content from URL
-@bot.message_handler(commands=['show'])
-def show_content(message):
-    try:
-        url = message.text.split(maxsplit=1)[1].strip()
-        # Автоматичне визначення типу
-        ext = url.lower().split('.')[-1]
-        if ext in ['jpg', 'jpeg', 'png', 'gif']:
-            state["content_type"] = "image"
-        else:
-            state["content_type"] = "video"
-            
-        state["content_url"] = url
-        save_state()
-        bot.reply_to(message, "✅ Медіа в буфері.")
-    except:
-        bot.reply_to(message, "❌ Використання: /show [link]")
+# ---------------------------------------------------------
+# RUN
+# ---------------------------------------------------------
 
-# Set custom name
-@bot.message_handler(commands=['rename', 'setname'])
-def rename_command(message):
-    try:
-        new_name = message.text.split(maxsplit=1)[1].strip().upper()
-        state["name"] = new_name
-        save_state() # ЗБЕРІГАЄМО
-        bot.reply_to(message, f"Name saved: {new_name}")
-    except IndexError:
-        bot.reply_to(message, "Enter new name")
+if __name__ == "__main__":
+    state.update(load_state())
 
-# Set YouTube video by URL
-@bot.message_handler(commands=['yt'])
-def set_youtube(message):
-    try:
-        url = message.text.split(maxsplit=1)[1].strip()
-        video_id = re.search(r"(?:v=|\/)([0-9A-Za-z_-]{11}).*", url)
-        
-        if video_id:
-            state["content_type"] = "youtube"
-            state["content_url"] = video_id.group(1)
-            save_state()
-            bot.reply_to(message, f"📺 YouTube завантажено. Перемкніть на сторінку 4.")
-        else:
-            bot.reply_to(message, "❌ Посилання не розпізнано.")
-    except:
-        bot.reply_to(message, "❌ Використання: /yt [link]")
+    threading.Thread(target=stats_loop, daemon=True).start()
+    threading.Thread(target=bot.polling, kwargs={"none_stop": True}, daemon=True).start()
 
-def get_word(num):
-    words = {"1": "one", "2": "two", "3": "three", "4": "four"}
-    return words.get(num, "one")
-
-# --- START ---
-if __name__ == '__main__':
-    Thread(target=update_stats_loop, daemon=True).start()
-    Thread(target=lambda: bot.polling(none_stop=True), daemon=True).start()
-    app.run(host='0.0.0.0', port=5000, debug=False, use_reloader=False)
+    app.run(host="0.0.0.0", port=5000, debug=False, use_reloader=False)
