@@ -150,6 +150,38 @@ def safe_multi(**kwargs):
     save_state()
 
 
+@bot.message_handler(commands=["load"])
+def system_load(msg):
+    try:
+        cpu = psutil.cpu_percent(interval=1)
+        ram = psutil.virtual_memory()
+        disk = psutil.disk_usage("/")
+        freq = psutil.cpu_freq()
+
+        try:
+            raw = open("/sys/class/thermal/thermal_zone0/temp").read().strip()
+            temp = f"{int(raw) / 1000:.1f}°C"
+        except Exception:
+            temp = "N/A"
+
+        freq_str = f"{freq.current:.0f} MHz" if freq else "N/A"
+        ram_used = ram.used // (1024 ** 2)
+        ram_total = ram.total // (1024 ** 2)
+        disk_free = disk.free // (1024 ** 3)
+
+        text = (
+            f"<b>System Load</b>\n"
+            f"CPU:  {cpu}%\n"
+            f"RAM:  {ram.percent}% ({ram_used} / {ram_total} MB)\n"
+            f"Temp: {temp}\n"
+            f"Freq: {freq_str}\n"
+            f"Disk: {disk.percent}% ({disk_free} GB free)"
+        )
+        bot.reply_to(msg, text)
+    except Exception as e:
+        bot.reply_to(msg, f"Error: {e}")
+
+
 @bot.message_handler(commands=["page"])
 def choose_page(msg):
     kb = telebot.types.ReplyKeyboardMarkup(resize_keyboard=True)
