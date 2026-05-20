@@ -99,7 +99,7 @@ function updateMedia(type, url) {
 
     else if (type === "youtube") {
         const iframe = document.createElement("iframe");
-        iframe.src = `[youtube.com](https://www.youtube.com/embed/${url}?autoplay=1&mute=1&controls=0&loop=1&playlist=${url}&modestbranding=1)`;
+        iframe.src = `https://www.youtube.com/embed/${url}?autoplay=1&mute=1&controls=0&loop=1&playlist=${url}&modestbranding=1`;
         iframe.allow = "autoplay";
         container.appendChild(iframe);
     }

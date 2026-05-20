@@ -1,0 +1,20 @@
+[Unit]
+Description=Ghost Project — web dashboard + Telegram bot
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+# Change "pi" below if your Pi user is different (e.g. "ghost", "user")
+User=pi
+WorkingDirectory=/home/pi/ghost_project
+# If you use a venv, replace "python3" with the full venv path:
+#   /home/pi/ghost_project/venv/bin/python
+ExecStart=/usr/bin/python3 /home/pi/ghost_project/app.py
+Restart=always
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=ghost
+
+[Install]
+WantedBy=multi-user.target

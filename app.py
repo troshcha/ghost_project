@@ -6,6 +6,7 @@ import datetime
 import telebot
 import threading
 import re
+import logging
 
 from flask import Flask, render_template, jsonify
 from dotenv import load_dotenv
@@ -14,12 +15,19 @@ from dotenv import load_dotenv
 # INIT
 # ---------------------------------------------------------
 
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(threadName)s] %(levelname)s: %(message)s"
+)
+log = logging.getLogger(__name__)
+
 load_dotenv()
 
 app = Flask(__name__)
 bot = telebot.TeleBot(os.getenv("BOT_TOKEN"), parse_mode="HTML")
 
 STATE_FILE = "state.json"
+UPLOADS_DIR = os.path.join("static", "uploads")
 
 DEFAULT_STATE = {
     "name": "GHOST-CORE",
@@ -36,7 +44,7 @@ state_lock = threading.Lock()
 state = {}
 
 # ---------------------------------------------------------
-# STATE HANDLING (THREAD‑SAFE)
+# STATE HANDLING (THREAD-SAFE)
 # ---------------------------------------------------------
 
 def load_state():
@@ -64,7 +72,7 @@ def save_state():
             json.dump(persistent, f, ensure_ascii=False, indent=4)
 
     except Exception as e:
-        print("State save error:", e)
+        log.error("State save error: %s", e)
 
 
 # ---------------------------------------------------------
@@ -75,13 +83,17 @@ def stats_loop():
     psutil.cpu_percent(None)
 
     while True:
-        cpu = psutil.cpu_percent(interval=1)
-        ram = psutil.virtual_memory().percent
+        try:
+            cpu = psutil.cpu_percent(interval=1)
+            ram = psutil.virtual_memory().percent
 
-        with state_lock:
-            state["cpu"] = f"CPU: {cpu}%"
-            state["ram"] = f"RAM: {ram}%"
-            state["time"] = datetime.datetime.now().strftime("%H:%M:%S")
+            with state_lock:
+                state["cpu"] = f"CPU: {cpu}%"
+                state["ram"] = f"RAM: {ram}%"
+                state["time"] = datetime.datetime.now().strftime("%H:%M:%S")
+        except Exception as e:
+            log.error("[Stats] error: %s", e)
+            time.sleep(1)
 
 
 # ---------------------------------------------------------
@@ -214,7 +226,7 @@ def upload_media(msg):
 
         ext = file_info.file_path.split(".")[-1]
         fname = f"content.{ext}"
-        path = os.path.join("static/uploads", fname)
+        path = os.path.join(UPLOADS_DIR, fname)
 
         data = bot.download_file(file_info.file_path)
         with open(path, "wb") as f:
@@ -231,13 +243,34 @@ def upload_media(msg):
 
 
 # ---------------------------------------------------------
+# BOT THREAD — auto-restarts on any crash
+# ---------------------------------------------------------
+
+def run_bot():
+    backoff = 5
+    while True:
+        try:
+            log.info("[Bot] Starting polling...")
+            bot.infinity_polling(timeout=60, long_polling_timeout=60)
+        except Exception as e:
+            log.error("[Bot] Polling crashed: %s. Restarting in %ds...", e, backoff)
+            time.sleep(backoff)
+            backoff = min(backoff * 2, 60)
+        else:
+            # infinity_polling exited cleanly — restart immediately
+            backoff = 5
+            log.warning("[Bot] Polling stopped unexpectedly, restarting...")
+
+
+# ---------------------------------------------------------
 # RUN
 # ---------------------------------------------------------
 
 if __name__ == "__main__":
+    os.makedirs(UPLOADS_DIR, exist_ok=True)
     state.update(load_state())
 
-    threading.Thread(target=stats_loop, daemon=True).start()
-    threading.Thread(target=bot.polling, kwargs={"none_stop": True}, daemon=True).start()
+    threading.Thread(target=stats_loop, daemon=True, name="stats").start()
+    threading.Thread(target=run_bot, daemon=True, name="telegram-bot").start()
 
     app.run(host="0.0.0.0", port=5000, debug=False, use_reloader=False)
