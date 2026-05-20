@@ -92,7 +92,12 @@ def auto_page_switch(hour):
     if current not in ("1", "2"):
         return
 
-    is_night = (hour >= NIGHT_HOUR) or (hour < DAY_HOUR)
+    if NIGHT_HOUR > DAY_HOUR:
+        # spans midnight e.g. 23→07
+        is_night = (hour >= NIGHT_HOUR) or (hour < DAY_HOUR)
+    else:
+        # same-day range e.g. 16→17
+        is_night = (hour >= NIGHT_HOUR) and (hour < DAY_HOUR)
     target = "2" if is_night else "1"
 
     if current != target:
