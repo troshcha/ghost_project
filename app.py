@@ -155,6 +155,25 @@ def safe_multi(**kwargs):
     save_state()
 
 
+@bot.message_handler(commands=["help"])
+def help_cmd(msg):
+    bot.reply_to(msg, (
+        "<b>Commands</b>\n\n"
+        "<b>Display</b>\n"
+        "/page — show page selector (1–4)\n"
+        "/mirror — toggle horizontal mirror\n\n"
+        "<b>Content (page 4)</b>\n"
+        "/show &lt;URL&gt; — load image or video from URL\n"
+        "/gif &lt;URL&gt; — load GIF from URL\n"
+        "/yt &lt;URL&gt; — load YouTube video\n"
+        "— or just send a GIF/video file directly\n\n"
+        "<b>System</b>\n"
+        "/load — CPU, RAM, temp, disk\n"
+        "/rename &lt;NAME&gt; — set display name\n"
+        "/off — shutdown the Pi"
+    ))
+
+
 @bot.message_handler(commands=["load"])
 def system_load(msg):
     try:
