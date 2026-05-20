@@ -29,6 +29,10 @@ bot = telebot.TeleBot(os.getenv("BOT_TOKEN"), parse_mode="HTML")
 STATE_FILE = "state.json"
 UPLOADS_DIR = os.path.join("static", "uploads")
 
+# Auto page-switch schedule (24h). Only affects pages 1 and 2.
+NIGHT_HOUR = 23   # switch to page 2 at this hour
+DAY_HOUR   = 7    # switch back to page 1 at this hour
+
 DEFAULT_STATE = {
     "name": "GHOST-CORE",
     "page": "1",
@@ -79,6 +83,23 @@ def save_state():
 # BACKGROUND SYSTEM METRICS
 # ---------------------------------------------------------
 
+def auto_page_switch(hour):
+    """Switch between page 1 (day) and page 2 (night) based on time.
+    Pages 3 and 4 are never touched automatically."""
+    with state_lock:
+        current = state.get("page")
+
+    if current not in ("1", "2"):
+        return
+
+    is_night = (hour >= NIGHT_HOUR) or (hour < DAY_HOUR)
+    target = "2" if is_night else "1"
+
+    if current != target:
+        safe_set("page", target)
+        log.info("[Auto] page %s → %s (hour=%d)", current, target, hour)
+
+
 def stats_loop():
     psutil.cpu_percent(None)
 
@@ -86,11 +107,14 @@ def stats_loop():
         try:
             cpu = psutil.cpu_percent(interval=1)
             ram = psutil.virtual_memory().percent
+            now = datetime.datetime.now()
 
             with state_lock:
                 state["cpu"] = f"CPU: {cpu}%"
                 state["ram"] = f"RAM: {ram}%"
-                state["time"] = datetime.datetime.now().strftime("%H:%M:%S")
+                state["time"] = now.strftime("%H:%M:%S")
+
+            auto_page_switch(now.hour)
         except Exception as e:
             log.error("[Stats] error: %s", e)
             time.sleep(1)
