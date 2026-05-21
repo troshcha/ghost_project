@@ -27,7 +27,6 @@ html, body {
     background: black;
     overflow: hidden;
     font-family: "Segoe UI", sans-serif;
-    perspective: 1000px;
 }
 
 /* --------------------------------------------------------
@@ -145,41 +144,37 @@ html, body {
     grid-template-columns: repeat(4, 1fr);
     gap: 2vw;
     width: 100%;
-    flex: 1;
-    min-height: 0;
-    padding: 1.5vh 0;
 }
 
 .p3-card {
     background: #0d1f0d;
     border: 1px solid #1e4a1e;
     border-radius: 10px;
-    padding: 1.5vh 1vw;
+    padding: 2.5vh 1.5vw;
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
-    gap: 1.5vh;
-    min-height: 0;
+    justify-content: flex-start;
+    gap: 2vh;
     overflow: hidden;
 }
 
 .p3-label {
-    font-size: clamp(13px, 1.8vh, 22px);
+    font-size: clamp(18px, 2.5vh, 32px);
     font-weight: bold;
-    letter-spacing: 4px;
+    letter-spacing: 5px;
     color: #3a7a3a;
 }
 
 .p3-value {
-    font-size: clamp(40px, 8vh, 90px);
+    font-size: clamp(80px, 14vh, 160px);
     font-weight: bold;
     color: #00ff88;
     transition: color 0.4s ease;
     font-variant-numeric: tabular-nums;
     white-space: nowrap;
     line-height: 1;
-    text-shadow: 0 0 8px currentColor;
+    text-shadow: 0 0 12px currentColor;
 }
 
 .p3-bar-bg {

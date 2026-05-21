@@ -6,7 +6,7 @@
 let lastPage = null;
 let lastMediaUrl = null;
 
-const SKEW_DEG = 5;
+const SKEW_DEG = 8;
 
 /* --------------------------------------------------------
    UPDATE LOOP
@@ -58,7 +58,7 @@ function applyTransform(mirror) {
 
     const isMirror = mirror === true || mirror === "true";
 
-    const parts = [`rotateY(${SKEW_DEG}deg)`];
+    const parts = [`perspective(1200px) rotateY(${SKEW_DEG}deg)`];
     if (isMirror) parts.push("rotate(180deg) scaleX(-1)");
 
     wrapper.style.transform = parts.join(" ");
