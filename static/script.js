@@ -145,7 +145,8 @@ function updateUI(data) {
 
     /* PAGE 3 — monitoring dashboard */
     setText("p3-name", data.name);
-    setText("p3-datetime", `${data.date}  ${data.time}`);
+    setText("p3-date", data.date);
+    setText("p3-clock", data.time);
     setText("p3-uptime", data.uptime);
     setText("p3-ip", data.ip);
 
