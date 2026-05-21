@@ -253,7 +253,6 @@ html, body {
 
 #p4-media img {
     height: 640px;
-    max-height: 100%;
     width: auto;
     max-width: 100%;
 }
@@ -265,7 +264,7 @@ html, body {
 }
 
 #p4-stats-panel {
-    width: 13vw;
+    width: 20vw;
     flex-shrink: 0;
     background: #080808;
     border-left: 2px solid #1a3a1a;
@@ -273,7 +272,7 @@ html, body {
     flex-direction: column;
     align-items: center;
     justify-content: space-around;
-    padding: 3vh 1vw;
+    padding: 3vh 1.5vw;
     font-family: "Courier New", monospace;
     color: #00ff88;
 }
@@ -287,7 +286,7 @@ html, body {
 }
 
 .p4-time-part {
-    font-size: clamp(36px, 6.5vh, 86px);
+    font-size: clamp(54px, 9.5vh, 126px);
     font-weight: bold;
     font-variant-numeric: tabular-nums;
     letter-spacing: 3px;
@@ -304,7 +303,7 @@ html, body {
 }
 
 .p4-mlabel {
-    font-size: clamp(16px, 2.6vh, 34px);
+    font-size: clamp(24px, 3.8vh, 50px);
     font-weight: bold;
     letter-spacing: 4px;
     color: #3a7a3a;
@@ -312,7 +311,7 @@ html, body {
 }
 
 .p4-mval {
-    font-size: clamp(22px, 3.8vh, 50px);
+    font-size: clamp(32px, 5.5vh, 72px);
     font-weight: bold;
     font-variant-numeric: tabular-nums;
     color: #00ff88;
@@ -337,7 +336,7 @@ html, body {
 }
 
 #p4-uptime {
-    font-size: clamp(18px, 2.8vh, 36px);
+    font-size: clamp(26px, 4vh, 52px);
     font-weight: bold;
     color: #3a7a3a;
     letter-spacing: 1px;
