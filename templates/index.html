@@ -67,9 +67,48 @@
 
         </section>
 
-        <!-- PAGE 4 — MEDIA PLAYER -->
+        <!-- PAGE 4 — AMBIENT MEDIA + STATS SIDEBAR -->
         <section id="page-4" class="page">
-            <div id="media-container"></div>
+
+            <div id="p4-media-panel">
+                <div id="p4-media"></div>
+            </div>
+
+            <div id="p4-stats-panel">
+                <div id="p4-time">00:00:00</div>
+
+                <div class="p4-metric">
+                    <div class="p4-metric-row">
+                        <span class="p4-mlabel">CPU</span>
+                        <span id="p4-cpu-val" class="p4-mval">0%</span>
+                    </div>
+                    <div class="p4-bar-bg"><div id="p4-cpu-bar" class="p4-bar"></div></div>
+                </div>
+
+                <div class="p4-metric">
+                    <div class="p4-metric-row">
+                        <span class="p4-mlabel">RAM</span>
+                        <span id="p4-ram-val" class="p4-mval">0%</span>
+                    </div>
+                    <div class="p4-bar-bg"><div id="p4-ram-bar" class="p4-bar"></div></div>
+                </div>
+
+                <div class="p4-metric">
+                    <div class="p4-metric-row">
+                        <span class="p4-mlabel">TEMP</span>
+                        <span id="p4-temp-val" class="p4-mval">0°C</span>
+                    </div>
+                    <div class="p4-bar-bg"><div id="p4-temp-bar" class="p4-bar"></div></div>
+                </div>
+
+                <div id="p4-uptime">—</div>
+            </div>
+
+        </section>
+
+        <!-- PAGE 5 — YOUTUBE FULLSCREEN -->
+        <section id="page-5" class="page">
+            <div id="p5-media"></div>
         </section>
 
     </div>

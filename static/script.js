@@ -3,8 +3,9 @@
    (prevents unnecessary DOM rewrites and memory leaks)
 --------------------------------------------------------- */
 
-let lastPage = null;
-let lastMediaUrl = null;
+let lastPage    = null;
+let lastP4Url   = null;
+let lastP5Id    = null;
 
 const SKEW_DEG = 8;
 
@@ -44,7 +45,8 @@ function applyPage(page) {
         "1": "mode-one",
         "2": "mode-two",
         "3": "mode-three",
-        "4": "mode-four"
+        "4": "mode-four",
+        "5": "mode-five"
     };
 
     const mode = map[page] || "mode-one";
@@ -67,28 +69,21 @@ function applyTransform(mirror) {
 }
 
 /* --------------------------------------------------------
-   MEDIA HANDLING (PAGE 4)
+   MEDIA HANDLING
 --------------------------------------------------------- */
 
-function updateMedia(type, url) {
-    if (lastMediaUrl === url) return;
-
-    const container = document.getElementById("media-container");
+function updatePage4Media(type, url) {
+    if (lastP4Url === url) return;
+    const container = document.getElementById("p4-media");
     if (!container) return;
-
-    lastMediaUrl = url;
-
+    lastP4Url = url;
     clearNode(container);
-
     if (!url) return;
-
     if (type === "image") {
         const img = document.createElement("img");
         img.src = url;
         container.appendChild(img);
-    }
-
-    else if (type === "video") {
+    } else if (type === "video") {
         const video = document.createElement("video");
         video.src = url;
         video.autoplay = true;
@@ -96,13 +91,19 @@ function updateMedia(type, url) {
         video.muted = true;
         container.appendChild(video);
     }
+}
 
-    else if (type === "youtube") {
-        const iframe = document.createElement("iframe");
-        iframe.src = `https://www.youtube.com/embed/${url}?autoplay=1&mute=1&controls=0&loop=1&playlist=${url}&modestbranding=1`;
-        iframe.allow = "autoplay";
-        container.appendChild(iframe);
-    }
+function updatePage5(ytId) {
+    if (lastP5Id === ytId) return;
+    const container = document.getElementById("p5-media");
+    if (!container) return;
+    lastP5Id = ytId;
+    clearNode(container);
+    if (!ytId) return;
+    const iframe = document.createElement("iframe");
+    iframe.src = `https://www.youtube.com/embed/${ytId}?autoplay=1&mute=1&controls=1&loop=1&playlist=${ytId}&modestbranding=1`;
+    iframe.allow = "autoplay; fullscreen";
+    container.appendChild(iframe);
 }
 
 /* --------------------------------------------------------
@@ -159,7 +160,17 @@ function updateUI(data) {
 
     /* PAGE 4 */
     if (data.page === "4") {
-        updateMedia(data.content_type, data.content_url);
+        setText("p4-time", data.time);
+        setMetric("p4-cpu-val", "p4-cpu-bar", `${data.cpu}%`, data.cpu,              60, 80);
+        setMetric("p4-ram-val", "p4-ram-bar", `${data.ram}%`, data.ram,              70, 85);
+        setMetric("p4-temp-val", "p4-temp-bar", `${data.temp}°C`, (data.temp / 85) * 100, 76, 88);
+        setText("p4-uptime", data.uptime);
+        updatePage4Media(data.content_type, data.content_url);
+    }
+
+    /* PAGE 5 */
+    if (data.page === "5") {
+        updatePage5(data.yt_id);
     }
 }
 

@@ -40,6 +40,7 @@ DEFAULT_STATE = {
     "mirror": False,
     "content_type": "image",
     "content_url": "",
+    "yt_id": "",
     "cpu": 0.0,
     "ram": 0.0,
     "temp": 0.0,
@@ -210,13 +211,13 @@ def help_cmd(msg):
     bot.reply_to(msg, (
         "<b>Commands</b>\n\n"
         "<b>Display</b>\n"
-        "/page — show page selector (1–4)\n"
-        "/mirror — toggle horizontal mirror\n\n"
-        "<b>Content (page 4)</b>\n"
-        "/show &lt;URL&gt; — load image or video from URL\n"
-        "/gif &lt;URL&gt; — load GIF from URL\n"
-        "/yt &lt;URL&gt; — load YouTube video\n"
-        "— or just send a GIF/video file directly\n\n"
+        "/page — show page selector (1–5)\n"
+        "/mirror — toggle perspective skew\n\n"
+        "<b>Content</b>\n"
+        "/show &lt;URL&gt; — image or video on page 4\n"
+        "/gif &lt;URL&gt; — GIF on page 4\n"
+        "/yt &lt;URL&gt; — YouTube fullscreen on page 5\n"
+        "— or send a GIF/video file directly (page 4)\n\n"
         "<b>System</b>\n"
         "/load — CPU, RAM, temp, disk\n"
         "/rename &lt;NAME&gt; — set display name\n"
@@ -254,11 +255,11 @@ def system_load(msg):
 @bot.message_handler(commands=["page"])
 def choose_page(msg):
     kb = telebot.types.ReplyKeyboardMarkup(resize_keyboard=True)
-    kb.add("1", "2", "3", "4")
+    kb.add("1", "2", "3", "4", "5")
     bot.send_message(msg.chat.id, "Select page:", reply_markup=kb)
 
 
-@bot.message_handler(func=lambda m: m.text in ["1", "2", "3", "4"])
+@bot.message_handler(func=lambda m: m.text in ["1", "2", "3", "4", "5"])
 def set_page(msg):
     page = msg.text
     safe_set("page", page)
@@ -329,8 +330,8 @@ def youtube(msg):
             return
 
         video_id = match.group(1)
-        safe_multi(content_type="youtube", content_url=video_id)
-        bot.reply_to(msg, "YouTube loaded. Switch to page 4.")
+        safe_set("yt_id", video_id)
+        bot.reply_to(msg, "YouTube loaded. Switch to page 5.")
     except Exception:
         bot.reply_to(msg, "Usage: /yt URL")
 
