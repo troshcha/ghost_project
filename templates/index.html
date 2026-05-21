@@ -25,15 +25,43 @@
             <div id="p2-time" class="p2-time">00:00:00</div>
         </section>
 
-        <!-- PAGE 3 — TERMINAL VIEW -->
+        <!-- PAGE 3 — MONITORING DASHBOARD -->
         <section id="page-3" class="page">
-            <div class="console-text">
-                > SYSTEM STATUS: ONLINE<br>
-                > HOST: <span id="p3-name">...</span><br>
-                > TIME: <span id="p3-time">...</span><br>
-                > <span id="p3-cpu">...</span><br>
-                > <span id="p3-ram">...</span>
+
+            <div class="p3-header">
+                <span id="p3-name">GHOST-CORE</span>
+                <span id="p3-datetime">— —</span>
             </div>
+
+            <div class="p3-grid">
+                <div class="p3-card">
+                    <div class="p3-label">CPU</div>
+                    <div id="p3-cpu-val" class="p3-value">0%</div>
+                    <div class="p3-bar-bg"><div id="p3-cpu-bar" class="p3-bar"></div></div>
+                </div>
+                <div class="p3-card">
+                    <div class="p3-label">RAM</div>
+                    <div id="p3-ram-val" class="p3-value">0%</div>
+                    <div class="p3-bar-bg"><div id="p3-ram-bar" class="p3-bar"></div></div>
+                </div>
+                <div class="p3-card">
+                    <div class="p3-label">TEMP</div>
+                    <div id="p3-temp-val" class="p3-value">0°C</div>
+                    <div class="p3-bar-bg"><div id="p3-temp-bar" class="p3-bar"></div></div>
+                </div>
+                <div class="p3-card">
+                    <div class="p3-label">DISK</div>
+                    <div id="p3-disk-val" class="p3-value">0%</div>
+                    <div class="p3-bar-bg"><div id="p3-disk-bar" class="p3-bar"></div></div>
+                </div>
+            </div>
+
+            <div class="p3-footer">
+                <span>UPTIME: <span id="p3-uptime">—</span></span>
+                <span class="p3-status">&#9679; ONLINE</span>
+                <span>IP: <span id="p3-ip">—</span></span>
+            </div>
+
         </section>
 
         <!-- PAGE 4 — MEDIA PLAYER -->

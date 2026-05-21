@@ -1,6 +1,7 @@
 import os
 import time
 import json
+import socket
 import psutil
 import datetime
 import telebot
@@ -40,9 +41,14 @@ DEFAULT_STATE = {
     "skew": 0,
     "content_type": "image",
     "content_url": "",
-    "cpu": "CPU: 0%",
-    "ram": "RAM: 0%",
+    "cpu": 0.0,
+    "ram": 0.0,
+    "temp": 0.0,
+    "disk": 0.0,
+    "uptime": "0m",
+    "ip": "—",
     "time": "00:00:00",
+    "date": "—",
 }
 
 state_lock = threading.Lock()
@@ -66,12 +72,13 @@ def load_state():
         return DEFAULT_STATE.copy()
 
 
+VOLATILE = {"cpu", "ram", "temp", "disk", "uptime", "ip", "time", "date"}
+
 def save_state():
-    """Save state without volatile stats (cpu/ram/time)."""
     try:
         with state_lock:
             persistent = {k: v for k, v in state.items()
-                          if k not in ("cpu", "ram", "time")}
+                          if k not in VOLATILE}
 
         with open(STATE_FILE, "w", encoding="utf-8") as f:
             json.dump(persistent, f, ensure_ascii=False, indent=4)
@@ -106,19 +113,62 @@ def auto_page_switch(hour):
         log.info("[Auto] page %s → %s (hour=%d)", current, target, hour)
 
 
+def get_temp():
+    try:
+        raw = open("/sys/class/thermal/thermal_zone0/temp").read().strip()
+        return round(int(raw) / 1000, 1)
+    except Exception:
+        return 0.0
+
+def get_ip():
+    try:
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.connect(("8.8.8.8", 80))
+        ip = s.getsockname()[0]
+        s.close()
+        return ip
+    except Exception:
+        return "N/A"
+
+def format_uptime(seconds):
+    d = int(seconds // 86400)
+    h = int((seconds % 86400) // 3600)
+    m = int((seconds % 3600) // 60)
+    if d > 0:
+        return f"{d}d {h}h {m}m"
+    if h > 0:
+        return f"{h}h {m}m"
+    return f"{m}m"
+
+
 def stats_loop():
     psutil.cpu_percent(None)
+    _ip = get_ip()
+    _ip_refresh = 0
 
     while True:
         try:
-            cpu = psutil.cpu_percent(interval=1)
-            ram = psutil.virtual_memory().percent
-            now = datetime.datetime.now()
+            cpu  = psutil.cpu_percent(interval=1)
+            ram  = psutil.virtual_memory().percent
+            disk = psutil.disk_usage("/").percent
+            temp = get_temp()
+            now  = datetime.datetime.now()
+            uptime = format_uptime(time.time() - psutil.boot_time())
+
+            # refresh IP every 60s
+            if time.time() - _ip_refresh > 60:
+                _ip = get_ip()
+                _ip_refresh = time.time()
 
             with state_lock:
-                state["cpu"] = f"CPU: {cpu}%"
-                state["ram"] = f"RAM: {ram}%"
-                state["time"] = now.strftime("%H:%M:%S")
+                state["cpu"]    = cpu
+                state["ram"]    = ram
+                state["temp"]   = temp
+                state["disk"]   = disk
+                state["uptime"] = uptime
+                state["ip"]     = _ip
+                state["time"]   = now.strftime("%H:%M:%S")
+                state["date"]   = now.strftime("%a %d %b %Y").upper()
 
             auto_page_switch(now.hour)
         except Exception as e:
@@ -179,31 +229,26 @@ def help_cmd(msg):
 @bot.message_handler(commands=["load"])
 def system_load(msg):
     try:
-        cpu = psutil.cpu_percent(interval=1)
-        ram = psutil.virtual_memory()
+        cpu  = psutil.cpu_percent(interval=1)
+        ram  = psutil.virtual_memory()
         disk = psutil.disk_usage("/")
         freq = psutil.cpu_freq()
+        temp = get_temp()
 
-        try:
-            raw = open("/sys/class/thermal/thermal_zone0/temp").read().strip()
-            temp = f"{int(raw) / 1000:.1f}°C"
-        except Exception:
-            temp = "N/A"
-
-        freq_str = f"{freq.current:.0f} MHz" if freq else "N/A"
-        ram_used = ram.used // (1024 ** 2)
+        freq_str  = f"{freq.current:.0f} MHz" if freq else "N/A"
+        ram_used  = ram.used  // (1024 ** 2)
         ram_total = ram.total // (1024 ** 2)
         disk_free = disk.free // (1024 ** 3)
+        temp_str  = f"{temp}°C" if temp else "N/A"
 
-        text = (
+        bot.reply_to(msg, (
             f"<b>System Load</b>\n"
             f"CPU:  {cpu}%\n"
             f"RAM:  {ram.percent}% ({ram_used} / {ram_total} MB)\n"
-            f"Temp: {temp}\n"
+            f"Temp: {temp_str}\n"
             f"Freq: {freq_str}\n"
             f"Disk: {disk.percent}% ({disk_free} GB free)"
-        )
-        bot.reply_to(msg, text)
+        ))
     except Exception as e:
         bot.reply_to(msg, f"Error: {e}")
 

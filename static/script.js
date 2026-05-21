@@ -118,6 +118,30 @@ function updateMedia(type, url) {
 }
 
 /* --------------------------------------------------------
+   METRIC CARD HELPER (page 3)
+   percent      — 0-100 for bar width
+   warnAt/critAt — percent thresholds for color change
+--------------------------------------------------------- */
+
+function setMetric(valId, barId, label, percent, warnAt, critAt) {
+    const color = percent >= critAt ? "#ff3333"
+                : percent >= warnAt ? "#ffcc00"
+                : "#00ff88";
+
+    const valEl = document.getElementById(valId);
+    const barEl = document.getElementById(barId);
+
+    if (valEl) {
+        valEl.innerText = label;
+        valEl.style.color = color;
+    }
+    if (barEl) {
+        barEl.style.width   = Math.min(percent, 100) + "%";
+        barEl.style.background = color;
+    }
+}
+
+/* --------------------------------------------------------
    MAIN UI UPDATE
 --------------------------------------------------------- */
 
@@ -129,16 +153,21 @@ function updateUI(data) {
     /* PAGE 1 */
     setText("p1-name", data.name);
     setText("p1-time", data.time);
-    setText("p1-stats", `${data.cpu} | ${data.ram}`);
+    setText("p1-stats", `CPU: ${data.cpu}%  |  RAM: ${data.ram}%`);
 
     /* PAGE 2 */
     setText("p2-time", data.time);
 
-    /* PAGE 3 */
+    /* PAGE 3 — monitoring dashboard */
     setText("p3-name", data.name);
-    setText("p3-time", data.time);
-    setText("p3-cpu", data.cpu);
-    setText("p3-ram", data.ram);
+    setText("p3-datetime", `${data.date}  ${data.time}`);
+    setText("p3-uptime", data.uptime);
+    setText("p3-ip", data.ip);
+
+    setMetric("p3-cpu-val",  "p3-cpu-bar",  `${data.cpu}%`,   data.cpu,              60, 80);
+    setMetric("p3-ram-val",  "p3-ram-bar",  `${data.ram}%`,   data.ram,              70, 85);
+    setMetric("p3-temp-val", "p3-temp-bar", `${data.temp}°C`, (data.temp / 85) * 100, 76, 88);
+    setMetric("p3-disk-val", "p3-disk-bar", `${data.disk}%`,  data.disk,             70, 85);
 
     /* PAGE 4 */
     if (data.page === "4") {
