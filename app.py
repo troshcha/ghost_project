@@ -115,7 +115,7 @@ def auto_page_switch(hour):
 def get_temp():
     try:
         raw = open("/sys/class/thermal/thermal_zone0/temp").read().strip()
-        return round(int(raw) / 1000, 1)
+        return int(raw) // 1000
     except Exception:
         return 0.0
 
