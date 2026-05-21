@@ -82,6 +82,9 @@ function updatePage4Media(type, url) {
     if (type === "image") {
         const img = document.createElement("img");
         img.src = url;
+        img.style.height = "640px";
+        img.style.width = "auto";
+        img.style.maxWidth = "100%";
         container.appendChild(img);
     } else if (type === "video") {
         const video = document.createElement("video");
@@ -89,6 +92,8 @@ function updatePage4Media(type, url) {
         video.autoplay = true;
         video.loop = true;
         video.muted = true;
+        video.style.maxWidth = "100%";
+        video.style.maxHeight = "100%";
         container.appendChild(video);
     }
 }
