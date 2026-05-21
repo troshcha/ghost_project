@@ -81,19 +81,28 @@ function updatePage4Media(type, url) {
     if (!url) return;
     if (type === "image") {
         const img = document.createElement("img");
+        img.onload = function() {
+            if (this.naturalHeight > 0) {
+                const scale = Math.max(1, 640 / this.naturalHeight);
+                this.style.width  = Math.round(this.naturalWidth  * scale) + "px";
+                this.style.height = Math.round(this.naturalHeight * scale) + "px";
+            }
+        };
         img.src = url;
-        img.style.height = "640px";
-        img.style.width = "auto";
-        img.style.maxWidth = "100%";
         container.appendChild(img);
     } else if (type === "video") {
         const video = document.createElement("video");
-        video.src = url;
         video.autoplay = true;
         video.loop = true;
         video.muted = true;
-        video.style.maxWidth = "100%";
-        video.style.maxHeight = "100%";
+        video.addEventListener("loadedmetadata", function() {
+            if (this.videoHeight > 0) {
+                const scale = Math.max(1, 640 / this.videoHeight);
+                this.style.width  = Math.round(this.videoWidth  * scale) + "px";
+                this.style.height = Math.round(this.videoHeight * scale) + "px";
+            }
+        });
+        video.src = url;
         container.appendChild(video);
     }
 }
