@@ -160,7 +160,9 @@ function updateUI(data) {
 
     /* PAGE 4 */
     if (data.page === "4") {
-        setText("p4-time", data.time);
+        const [hh, mm] = data.time.split(":");
+        setText("p4-hour", hh);
+        setText("p4-min",  mm);
         setMetric("p4-cpu-val", "p4-cpu-bar", `${data.cpu}%`, data.cpu,              60, 80);
         setMetric("p4-ram-val", "p4-ram-bar", `${data.ram}%`, data.ram,              70, 85);
         setMetric("p4-temp-val", "p4-temp-bar", `${data.temp}°C`, (data.temp / 85) * 100, 76, 88);
