@@ -6,6 +6,7 @@
 let lastPage = null;
 let lastMediaUrl = null;
 let lastMirror = null;
+let lastSkew = null;
 
 /* --------------------------------------------------------
    UPDATE LOOP
@@ -51,19 +52,30 @@ function applyPage(page) {
     lastPage = page;
 }
 
-function applyMirror(mirror) {
-    if (mirror === lastMirror) return;
-
+function applyTransform() {
     const wrapper = document.querySelector(".mirror-wrapper");
     if (!wrapper) return;
 
-    if (mirror === true || mirror === "true") {
-        wrapper.classList.add("active-mirror");
-    } else {
-        wrapper.classList.remove("active-mirror");
-    }
+    const isMirror = lastMirror === true || lastMirror === "true";
+    const skew = Number(lastSkew) || 0;
 
+    const parts = [];
+    if (skew !== 0) parts.push(`perspective(800px) rotateY(${skew}deg)`);
+    if (isMirror) parts.push("rotate(180deg) scaleX(-1)");
+
+    wrapper.style.transform = parts.join(" ");
+}
+
+function applySkew(skew) {
+    if (skew === lastSkew) return;
+    lastSkew = skew;
+    applyTransform();
+}
+
+function applyMirror(mirror) {
+    if (mirror === lastMirror) return;
     lastMirror = mirror;
+    applyTransform();
 }
 
 /* --------------------------------------------------------
@@ -112,6 +124,7 @@ function updateMedia(type, url) {
 function updateUI(data) {
     applyPage(data.page);
     applyMirror(data.mirror);
+    applySkew(data.skew);
 
     /* PAGE 1 */
     setText("p1-name", data.name);
