@@ -119,7 +119,7 @@ html, body {
     background: #080808;
     flex-direction: column;
     justify-content: space-between;
-    padding: 36px 56px;
+    padding: 4vh 5vw;
     font-family: "Courier New", monospace;
 }
 
