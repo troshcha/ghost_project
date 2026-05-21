@@ -38,7 +38,6 @@ DEFAULT_STATE = {
     "name": "GHOST-CORE",
     "page": "1",
     "mirror": False,
-    "skew": 0,
     "content_type": "image",
     "content_url": "",
     "cpu": 0.0,
@@ -212,8 +211,7 @@ def help_cmd(msg):
         "<b>Commands</b>\n\n"
         "<b>Display</b>\n"
         "/page — show page selector (1–4)\n"
-        "/mirror — toggle horizontal mirror\n"
-        "/skew &lt;degrees&gt; — perspective tilt (-45 to 45, 0 = off)\n\n"
+        "/mirror — toggle horizontal mirror\n\n"
         "<b>Content (page 4)</b>\n"
         "/show &lt;URL&gt; — load image or video from URL\n"
         "/gif &lt;URL&gt; — load GIF from URL\n"
@@ -265,19 +263,6 @@ def set_page(msg):
     page = msg.text
     safe_set("page", page)
     bot.reply_to(msg, f".mode-{page}")
-
-
-@bot.message_handler(commands=["skew"])
-def set_skew(msg):
-    try:
-        degrees = int(msg.text.split(maxsplit=1)[1].strip())
-        if not (-45 <= degrees <= 45):
-            bot.reply_to(msg, "Range: -45 to 45 degrees.")
-            return
-        safe_set("skew", degrees)
-        bot.reply_to(msg, f"Skew set to {degrees}°. Use /skew 0 to reset.")
-    except Exception:
-        bot.reply_to(msg, "Usage: /skew &lt;degrees&gt;  (e.g. /skew 15)")
 
 
 @bot.message_handler(commands=["mirror"])

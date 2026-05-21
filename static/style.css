@@ -119,53 +119,61 @@ html, body {
     background: #080808;
     flex-direction: column;
     justify-content: space-between;
-    padding: 4vh 5vw;
+    padding: 4vh 10vw;
     font-family: "Courier New", monospace;
+    overflow: hidden;
 }
 
 .p3-header {
+    flex-shrink: 0;
     display: flex;
     justify-content: space-between;
     align-items: center;
     width: 100%;
-    padding-bottom: 24px;
+    padding-bottom: 2vh;
     border-bottom: 1px solid #1a3a1a;
     color: #00ff88;
-    font-size: 34px;
+    font-size: clamp(20px, 3vh, 40px);
     letter-spacing: 4px;
 }
 
 .p3-grid {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
-    gap: 28px;
+    gap: 2vw;
     width: 100%;
     flex: 1;
-    align-items: center;
+    min-height: 0;
+    padding: 1.5vh 0;
 }
 
 .p3-card {
     background: #0d1f0d;
     border: 1px solid #1e4a1e;
     border-radius: 10px;
-    padding: 32px 24px;
+    padding: 2vh 1vw;
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 18px;
+    justify-content: space-around;
+    min-height: 0;
+    overflow: hidden;
 }
 
 .p3-label {
-    font-size: 16px;
+    font-size: clamp(13px, 1.8vh, 22px);
     letter-spacing: 4px;
     color: #3a7a3a;
 }
 
 .p3-value {
-    font-size: 58px;
+    font-size: clamp(40px, 8vh, 90px);
     font-weight: bold;
     color: #00ff88;
     transition: color 0.4s ease;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+    line-height: 1;
 }
 
 .p3-bar-bg {
@@ -185,14 +193,15 @@ html, body {
 }
 
 .p3-footer {
+    flex-shrink: 0;
     display: flex;
     justify-content: space-between;
     align-items: center;
     width: 100%;
-    padding-top: 24px;
+    padding-top: 2vh;
     border-top: 1px solid #1a3a1a;
     color: #3a7a3a;
-    font-size: 22px;
+    font-size: clamp(15px, 2.2vh, 28px);
     letter-spacing: 2px;
 }
 

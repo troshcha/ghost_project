@@ -6,6 +6,8 @@
 let lastPage = null;
 let lastMediaUrl = null;
 
+const SKEW_DEG = 5;
+
 /* --------------------------------------------------------
    UPDATE LOOP
 --------------------------------------------------------- */
@@ -50,15 +52,13 @@ function applyPage(page) {
     lastPage = page;
 }
 
-function applyTransform(mirror, skew) {
+function applyTransform(mirror) {
     const wrapper = document.querySelector(".mirror-wrapper");
     if (!wrapper) return;
 
     const isMirror = mirror === true || mirror === "true";
-    const deg = Number(skew) || 0;
 
-    const parts = [];
-    if (deg !== 0) parts.push(`perspective(800px) rotateY(${deg}deg)`);
+    const parts = [`perspective(800px) rotateY(${SKEW_DEG}deg)`];
     if (isMirror) parts.push("rotate(180deg) scaleX(-1)");
 
     wrapper.style.transform = parts.join(" ");
@@ -133,7 +133,7 @@ function setMetric(valId, barId, label, percent, warnAt, critAt) {
 
 function updateUI(data) {
     applyPage(data.page);
-    applyTransform(data.mirror, data.skew);
+    applyTransform(data.mirror);
 
     /* PAGE 1 */
     setText("p1-name", data.name);
