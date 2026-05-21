@@ -58,10 +58,12 @@ function applyTransform(mirror) {
 
     const isMirror = mirror === true || mirror === "true";
 
-    const parts = [`perspective(1200px) rotateY(${SKEW_DEG}deg)`];
-    if (isMirror) parts.push("rotate(180deg) scaleX(-1)");
+    if (!isMirror) {
+        wrapper.style.transform = "";
+        return;
+    }
 
-    wrapper.style.transform = parts.join(" ");
+    wrapper.style.transform = `perspective(1200px) rotateY(${SKEW_DEG}deg) rotate(180deg) scaleX(-1)`;
 }
 
 /* --------------------------------------------------------
